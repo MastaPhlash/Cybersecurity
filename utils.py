@@ -46,7 +46,11 @@ class ToolTip:
     def show_tip(self, event=None):
         if self.tipwindow or not self.text:
             return
-        x, y, _, cy = self.widget.bbox("insert") if hasattr(self.widget, 'bbox') else (0,0,0,0)
+        bbox = self.widget.bbox("insert") if hasattr(self.widget, 'bbox') else (0,0,0,0)
+        if bbox is None:
+            x, y, _, cy = 0, 0, 0, 0
+        else:
+            x, y, _, cy = bbox
         x = x + self.widget.winfo_rootx() + 25
         y = y + cy + self.widget.winfo_rooty() + 20
         self.tipwindow = tw = tk.Toplevel(self.widget)
