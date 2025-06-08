@@ -66,17 +66,35 @@ def run_gui():
     entry_ports.grid(row=1, column=1, padx=5, pady=5, sticky='ew')
     ToolTip(entry_ports, "Enter ports as a comma-separated list and/or ranges.")
 
-    tk.Label(root, text="Timeout (s):").grid(row=2, column=0, padx=5, pady=5, sticky="e")
+    # --- Scan Settings dialog ---
+    def open_scan_settings():
+        settings_win = tk.Toplevel(root)
+        settings_win.title("Scan Settings")
+        settings_win.geometry("240x120")
+        tk.Label(settings_win, text="Timeout (s):").grid(row=0, column=0, padx=8, pady=8, sticky="e")
+        timeout_entry = tk.Entry(settings_win, width=6)
+        timeout_entry.insert(0, entry_timeout.get())
+        timeout_entry.grid(row=0, column=1, padx=8, pady=8, sticky="w")
+        tk.Label(settings_win, text="Threads:").grid(row=1, column=0, padx=8, pady=8, sticky="e")
+        threads_spin = tk.Spinbox(settings_win, from_=1, to=100, width=4)
+        threads_spin.delete(0, tk.END)
+        threads_spin.insert(0, thread_count.get())
+        threads_spin.grid(row=1, column=1, padx=8, pady=8, sticky="w")
+        def save_settings():
+            entry_timeout.delete(0, tk.END)
+            entry_timeout.insert(0, timeout_entry.get())
+            thread_count.set(int(threads_spin.get()))
+            settings_win.destroy()
+        tk.Button(settings_win, text="Save", command=save_settings).grid(row=2, column=0, columnspan=2, pady=10)
+        settings_win.transient(root)
+        settings_win.grab_set()
+        settings_win.wait_window()
+
+    # --- Hidden fields for timeout and threads (not shown in main UI) ---
     entry_timeout = tk.Entry(root, width=4)
     entry_timeout.insert(0, "0.2")
-    entry_timeout.grid(row=2, column=1, padx=5, pady=5, sticky='ew')
-    ToolTip(entry_timeout, "Set the timeout (in seconds) for each port scan.")
-
+    entry_timeout.grid_forget()
     thread_count = tk.IntVar(value=20)
-    tk.Label(root, text="Threads:").grid(row=3, column=0, padx=5, pady=5, sticky="e")
-    thread_spin = tk.Spinbox(root, from_=1, to=100, textvariable=thread_count, width=2)
-    thread_spin.grid(row=3, column=1, padx=5, pady=5, sticky='w')
-    ToolTip(thread_spin, "Number of threads for parallel scanning.")
 
     # --- Output area ---
     output = scrolledtext.ScrolledText(root, width=26, height=13)
@@ -489,6 +507,7 @@ def run_gui():
     tools_menu = tk.Menu(menubar, tearoff=0)
     tools_menu.add_command(label="Export Results", command=export_results)
     tools_menu.add_command(label="View History", command=show_history)
+    tools_menu.add_command(label="Scan Settings...", command=open_scan_settings)
     # Manage Profiles submenu
     profiles_menu = tk.Menu(tools_menu, tearoff=0)
     profiles_menu.add_command(label="Save Profile", command=save_profile)
@@ -499,10 +518,10 @@ def run_gui():
     # Presets menu
     presets_menu = tk.Menu(menubar, tearoff=0)
     presets_menu.add_command(label="Common Ports", command=lambda: entry_ports.delete(0, tk.END) or entry_ports.insert(0, "20,21,22,23,25,53,80,110,139,143,443,445,3389,8080,3306,5900,123,161,389,636,993,995,1723,5432,1521,5060,69,137,138,139,445"))
-    presets_menu.add_command(label="Well-known Ports (0-1023)", command=lambda: entry_ports.delete(0, tk.END) or entry_ports.insert(0, "0-1023"))
+    presets_menu.add_command(label="Well-known Ports (1-1023)", command=lambda: entry_ports.delete(0, tk.END) or entry_ports.insert(0, "1-1023"))
     presets_menu.add_command(label="Registered Ports (1024-49151)", command=lambda: entry_ports.delete(0, tk.END) or entry_ports.insert(0, "1024-49151"))
     presets_menu.add_command(label="Private Ports (49152-65535)", command=lambda: entry_ports.delete(0, tk.END) or entry_ports.insert(0, "49152-65535"))
-    presets_menu.add_command(label="All Ports (0-65535)", command=lambda: entry_ports.delete(0, tk.END) or entry_ports.insert(0, "0-65535"))
+    presets_menu.add_command(label="All Ports (1-65535)", command=lambda: entry_ports.delete(0, tk.END) or entry_ports.insert(0, "1-65535"))
     menubar.add_cascade(label="Presets", menu=presets_menu)
 
     # Options menu (for checkboxes)
