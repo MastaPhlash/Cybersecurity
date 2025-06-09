@@ -297,6 +297,8 @@ def run_gui():
         stop_event.set()
         set_status_line("Scan stopped.")
         progress['value'] = 0
+        scan_button.config(state=tk.NORMAL)
+        stop_button.config(state=tk.NORMAL)
 
     root.bind('<Control-q>', lambda e: stop_scan())
     root.bind('<Control-Q>', lambda e: stop_scan())
@@ -550,8 +552,15 @@ def run_gui():
         output.delete(1.0, tk.END)
         progress['value'] = 0
         set_status_line("Scanning...")
-        import threading
-        t = threading.Thread(target=threaded_scan)
+        scan_button.config(state=tk.DISABLED)
+        stop_button.config(state=tk.NORMAL)
+        def scan_wrapper():
+            try:
+                threaded_scan()
+            finally:
+                scan_button.config(state=tk.NORMAL)
+                stop_button.config(state=tk.NORMAL)
+        t = threading.Thread(target=scan_wrapper)
         t.daemon = True
         t.start()
 
@@ -562,6 +571,7 @@ def run_gui():
     stop_button = tk.Button(root, text="Stop", command=stop_scan, width=8)
     stop_button.grid(row=11, column=1, pady=5, padx=(2,10), sticky="ew")
     ToolTip(stop_button, "Stop the current scan.")
+    stop_button.config(state=tk.NORMAL)
 
     # --- Menu bar with all options (moved here so all functions are defined) ---
     menubar = tk.Menu(root)
