@@ -5,8 +5,9 @@ A graphical port scanner tool built with Python and Tkinter. This application al
 ## Features
 
 - **Scan IP Ranges:** Specify target(s) as a single IP, a range, or a comma-separated list to scan multiple hosts.
-- **Port Range Selection:** Choose custom port ranges or use presets (Well-known, Common, All).
-- **Threaded Scanning:** Adjustable thread count for faster scans.
+- **Port Range Selection:** Choose custom port ranges or use presets (Common, Well-known, Registered, Private, All).
+- **Threaded Scanning:** Adjustable thread count for faster scans (default: 20 threads).
+- **Timeout Control:** Adjustable timeout per port (default: 0.2 seconds). Lower values are faster; higher values are more reliable on slow networks.
 - **UDP Scan (Experimental):** Optionally scan UDP ports.
 - **Ping Before Scan:** Optionally ping hosts before scanning to skip unreachable hosts.
 - **Service Detection:** Maps common ports to service names.
@@ -19,10 +20,12 @@ A graphical port scanner tool built with Python and Tkinter. This application al
 - **Copy Output:** Copy scan results to clipboard.
 - **Responsive GUI:** Output and progress bar update in real time.
 - **Search/Filter Output:** Filter scan results in real time.
-- **Presets:** Quickly select well-known, common, or all ports.
+- **Presets:** Quickly select common, well-known, registered, private, or all ports. (All presets start at port 1; port 0 is not scanned.)
 - **Stop Scan:** Gracefully stop an ongoing scan from the menu or with Ctrl+Q.
 - **Auto-Detect Local Subnet:** Suggests your local subnet for quick scanning.
 - **Demo Mode:** Toggle to preview scan input without running a real scan.
+- **Advanced Options:** Reverse DNS, Banner Grabbing, Randomize Port Order, Retry on Failure, Verbose Output, Export on Completion, Sound Notification.
+- **Scan Settings Dialog:** Timeout and thread count are set via the Tools > Scan Settings... dialog for a clean main UI.
 
 ## Usage
 
@@ -43,9 +46,9 @@ A graphical port scanner tool built with Python and Tkinter. This application al
 
 3. **Configure Scan:**
    - Enter the **Target(s)** as a single IP, a range (e.g. `192.168.1.1-192.168.1.10`), or a comma-separated list (e.g. `192.168.1.1,192.168.1.5`).
-   - Set the port range or use the Presets menu.
-   - Adjust timeout and thread count as needed.
-   - Optionally enable "Ping hosts before scanning" or "UDP Scan".
+   - Set the port range or use the Presets menu. Presets include Common, Well-known (1-1023), Registered (1024-49151), Private (49152-65535), and All (1-65535) ports.
+   - Adjust timeout and thread count in Tools > Scan Settings... (default: 0.2s timeout, 20 threads).
+   - Optionally enable advanced options in the Options menu (Ping, UDP, Reverse DNS, Banner Grabbing, etc).
    - Use the Tools menu for export, history, profiles, and more.
    - Use the Help menu for About/Help.
 
@@ -56,7 +59,7 @@ A graphical port scanner tool built with Python and Tkinter. This application al
    Use the **Tools** menu to export results, copy to clipboard, or manage profiles.
 
 6. **Stop Scan:**  
-   Use the **Stop Scan** menu item or Ctrl+Q to halt an ongoing scan.
+   Use the **Stop** button or Ctrl+Q to halt an ongoing scan.
 
 ## Example
 
@@ -68,6 +71,8 @@ Open ports for 192.168.1.1: ['22 (SSH) | Banner: OpenSSH_7.6p1 Ubuntu-4ubuntu0.3
 
 ## Notes
 
+- **Timeout:** Controls how long to wait for each port. 0.2s is fast for LANs; increase to 0.5–1.0s for slow/remote networks.
+- **Threads:** Controls how many ports/hosts are scanned in parallel. 20 is safe for most users; increase for speed on fast systems, decrease if you see errors.
 - **UDP scanning** is experimental and may produce false positives due to the nature of UDP.
 - **Banner grabbing** may not always succeed, depending on the service and firewall settings.
 - **Profiles** are saved in `scan_profiles.json` in the app directory.

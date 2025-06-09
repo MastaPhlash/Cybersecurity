@@ -38,7 +38,7 @@ def run_gui():
     def show_about():
         show_info_dialog(
             "About Python Port Scanner",
-            "Python Port Scanner\n\nA graphical port scanner for cybersecurity professionals and enthusiasts.\n\nFeatures:\n- Scan IP/port ranges or custom lists\n- Banner grabbing\n- Export results\n- Dark/light mode\n- Nmap integration (if installed)\n\nAuthor: Phlash\nLicense: MIT\n\nFor help, see the README or visit the project repository."
+            "Python Port Scanner\n\nA graphical port scanner for cybersecurity professionals and enthusiasts.\n\nFeatures:\n- Scan IP/port ranges or custom lists\n- Banner grabbing\n- Export results (TXT, CSV, HTML, JSON)\n- Scan history and profiles\n- Advanced options: Reverse DNS, Banner Grabbing, Randomize Port Order, Retry on Failure, Verbose Output, Export on Completion, Sound Notification\n- Responsive, compact GUI with live progress\n\nUsage tips:\n- Use Tools > Scan Settings... to adjust timeout (default: 0.2s) and threads (default: 20).\n- Use Presets for common/well-known/registered/private/all ports.\n- See README for more details.\n\nAuthor: Phlash\nLicense: MIT\n\nFor help, see the README or visit the project repository."
         )
 
     thread_count = tk.IntVar(value=20)
@@ -163,18 +163,48 @@ def run_gui():
 
     # --- Export menu options ---
     def export_results():
-        file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text files", "*.txt"), ("All files", "*.*")])
-        if file_path:
-            with open(file_path, 'w') as f:
-                f.write(output.get(1.0, tk.END))
-            set_status_line("Results exported.")
-
-    def export_results_csv():
-        file_path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV files", "*.csv"), ("All files", "*.*")])
-        if file_path:
-            with open(file_path, 'w') as f:
-                f.write("IP,Port\n")
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".txt",
+            filetypes=[
+                ("Text files", "*.txt"),
+                ("CSV files", "*.csv"),
+                ("HTML files", "*.html"),
+                ("JSON files", "*.json"),
+                ("All files", "*.*")
+            ]
+        )
+        if not file_path:
+            return
+        ext = os.path.splitext(file_path)[1].lower()
+        try:
+            if ext == ".csv":
+                # Export as CSV
+                with open(file_path, 'w') as f:
+                    f.write("IP,Port\n")
+                    lines = output.get(1.0, tk.END).splitlines()
+                    current_ip = None
+                    for line in lines:
+                        if line.startswith("Scanning "):
+                            parts = line.split()
+                            if len(parts) > 1:
+                                current_ip = parts[1]
+                        elif line.startswith("Port ") and current_ip:
+                            port_part = line.split(":")[0].replace("Port ", "").strip()
+                            f.write(f'{current_ip},{port_part}\n')
+                set_status_line("Results exported as CSV.")
+            elif ext == ".html":
+                # Export as HTML
+                html = ["<html><head><title>Port Scan Results</title></head><body>"]
+                html.append(f"<h2>Port Scan Results</h2><pre>{output.get(1.0, tk.END)}</pre>")
+                html.append("</body></html>")
+                with open(file_path, 'w') as f:
+                    f.write('\n'.join(html))
+                set_status_line("Results exported as HTML.")
+            elif ext == ".json":
+                # Export as JSON
+                import json
                 lines = output.get(1.0, tk.END).splitlines()
+                results = []
                 current_ip = None
                 for line in lines:
                     if line.startswith("Scanning "):
@@ -183,54 +213,17 @@ def run_gui():
                             current_ip = parts[1]
                     elif line.startswith("Port ") and current_ip:
                         port_part = line.split(":")[0].replace("Port ", "").strip()
-                        f.write(f'{current_ip},{port_part}\n')
-            set_status_line("Results exported as CSV.")
-
-    def export_results_html():
-        file_path = filedialog.asksaveasfilename(defaultextension=".html", filetypes=[("HTML files", "*.html"), ("All files", "*.*")])
-        if file_path:
-            html = ["<html><head><title>Port Scan Results</title></head><body>"]
-            html.append(f"<h2>Port Scan Results</h2><pre>{output.get(1.0, tk.END)}</pre>")
-            html.append("</body></html>")
-            with open(file_path, 'w') as f:
-                f.write('\n'.join(html))
-            set_status_line("Results exported as HTML.")
-
-    def export_results_json():
-        import json
-        file_path = filedialog.asksaveasfilename(defaultextension=".json", filetypes=[("JSON files", "*.json"), ("All files", "*.*")])
-        if file_path:
-            lines = output.get(1.0, tk.END).splitlines()
-            results = []
-            current_ip = None
-            for line in lines:
-                if line.startswith("Scanning "):
-                    parts = line.split()
-                    if len(parts) > 1:
-                        current_ip = parts[1]
-                elif line.startswith("Port ") and current_ip:
-                    port_part = line.split(":")[0].replace("Port ", "").strip()
-                    results.append({"ip": current_ip, "port": port_part})
-            with open(file_path, 'w') as f:
-                json.dump(results, f, indent=2)
-            set_status_line("Results exported as JSON.")
-
-    def export_results_pdf():
-        try:
-            from reportlab.lib.pagesizes import letter
-            from reportlab.pdfgen import canvas
-        except ImportError:
-            messagebox.showerror("Missing Dependency", "reportlab is required for PDF export. Install with 'pip install reportlab'.")
-            return
-        file_path = filedialog.asksaveasfilename(defaultextension=".pdf", filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")])
-        if file_path:
-            c = canvas.Canvas(file_path, pagesize=letter)
-            textobject = c.beginText(40, 750)
-            for line in output.get(1.0, tk.END).splitlines():
-                textobject.textLine(line)
-            c.drawText(textobject)
-            c.save()
-            set_status_line("Results exported as PDF.")
+                        results.append({"ip": current_ip, "port": port_part})
+                with open(file_path, 'w') as f:
+                    json.dump(results, f, indent=2)
+                set_status_line("Results exported as JSON.")
+            else:
+                # Default: export as TXT
+                with open(file_path, 'w') as f:
+                    f.write(output.get(1.0, tk.END))
+                set_status_line("Results exported.")
+        except Exception as e:
+            set_status_line(f"Error exporting results: {e}")
 
     # --- Scan history feature ---
     scan_history = []
@@ -255,40 +248,49 @@ def run_gui():
             "timeout": entry_timeout.get(),
             "threads": thread_count.get()
         }
-        if os.path.exists(PROFILE_FILE):
-            with open(PROFILE_FILE, 'r') as f:
-                profiles = json.load(f)
-        else:
-            profiles = []
-        profiles.append(profile)
-        with open(PROFILE_FILE, 'w') as f:
-            json.dump(profiles, f, indent=2)
-        set_status_line("Profile saved.")
+        try:
+            if os.path.exists(PROFILE_FILE):
+                with open(PROFILE_FILE, 'r') as f:
+                    profiles = json.load(f)
+            else:
+                profiles = []
+            profiles.append(profile)
+            with open(PROFILE_FILE, 'w') as f:
+                json.dump(profiles, f, indent=2)
+            set_status_line("Profile saved.")
+        except Exception as e:
+            set_status_line(f"Error saving profile: {e}")
 
     def load_profile():
-        if not os.path.exists(PROFILE_FILE):
-            set_status_line("No profiles found.")
-            return
-        with open(PROFILE_FILE, 'r') as f:
-            profiles = json.load(f)
-        if not profiles:
-            set_status_line("No profiles found.")
-            return
-        profile = profiles[-1]
-        entry_targets.delete(0, tk.END)
-        entry_targets.insert(0, profile["targets"])
-        entry_ports.delete(0, tk.END)
-        entry_ports.insert(0, profile["ports"])
-        entry_timeout.delete(0, tk.END)
-        entry_timeout.insert(0, profile["timeout"])
-        thread_count.set(profile["threads"])
-        set_status_line("Profile loaded.")
+        try:
+            if not os.path.exists(PROFILE_FILE):
+                set_status_line("No profiles found.")
+                return
+            with open(PROFILE_FILE, 'r') as f:
+                profiles = json.load(f)
+            if not profiles:
+                set_status_line("No profiles found.")
+                return
+            profile = profiles[-1]
+            entry_targets.delete(0, tk.END)
+            entry_targets.insert(0, profile["targets"])
+            entry_ports.delete(0, tk.END)
+            entry_ports.insert(0, profile["ports"])
+            entry_timeout.delete(0, tk.END)
+            entry_timeout.insert(0, profile["timeout"])
+            thread_count.set(profile["threads"])
+            set_status_line("Profile loaded.")
+        except Exception as e:
+            set_status_line(f"Error loading profile: {e}")
 
     # --- Copy output to clipboard ---
     def copy_output_to_clipboard():
-        root.clipboard_clear()
-        root.clipboard_append(output.get(1.0, tk.END))
-        set_status_line("Output copied to clipboard.")
+        try:
+            root.clipboard_clear()
+            root.clipboard_append(output.get(1.0, tk.END))
+            set_status_line("Output copied to clipboard.")
+        except Exception as e:
+            set_status_line(f"Error copying output: {e}")
 
     # --- Graceful scan stop ---
     def stop_scan():
@@ -328,10 +330,63 @@ def run_gui():
         except Exception as e:
             set_status_line(f"Could not detect local subnet: {e}")
 
-    # --- Real scan logic ---
-    import threading, time
-    from scanner import parse_ports, validate_ip, is_host_alive, grab_banner, resolve_hostname
+    # --- Demo Mode logic ---
+    def run_demo_scan():
+        output.delete(1.0, tk.END)
+        progress['value'] = 0
+        set_status_line("Demo scan running...")
+        import random, time as t
+        fake_targets = ["192.168.1.10", "192.168.1.11"]
+        fake_ports = [22, 80, 443, 3389]
+        for i, ip in enumerate(fake_targets):
+            color_insert(output, f"\nScanning {ip}...\n", 'info')
+            open_ports = random.sample(fake_ports, random.randint(1, len(fake_ports)))
+            for idx, port in enumerate(fake_ports):
+                t.sleep(0.2)
+                if port in open_ports:
+                    color_insert(output, f"Port {port}: OPEN | Banner: DemoBanner v1.0\n", 'open')
+                else:
+                    if show_closed_var.get():
+                        color_insert(output, f"Port {port}: CLOSED\n", 'closed')
+                percent = ((i + (idx+1)/len(fake_ports)) / len(fake_targets)) * 100
+                elapsed = (i * len(fake_ports) + idx + 1) * 0.2
+                est_left = (len(fake_targets)*len(fake_ports) - (i*len(fake_ports)+idx+1)) * 0.2
+                set_status_line(f"{ip}:{port}", percent, elapsed, est_left)
+                progress['value'] = i + (idx+1)/len(fake_ports)
+                progress.update_idletasks()
+            color_insert(output, f"Open ports for {ip}: {[p for p in open_ports]}\n", 'info')
+        progress['value'] = 0
+        set_status_line("Demo scan complete.")
 
+    # --- Retry on Failure logic ---
+    def scan_port_with_retry(ip, port, timeout, retries=1):
+        import socket
+        for attempt in range(retries+1):
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.settimeout(timeout)
+                    result = s.connect_ex((str(ip), port))
+                    if result == 0:
+                        return True
+            except Exception:
+                pass
+        return False
+
+    # --- UDP Scan logic (simple implementation) ---
+    def scan_udp_port(ip, port, timeout):
+        import socket
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                s.settimeout(timeout)
+                s.sendto(b"", (str(ip), port))
+                s.recvfrom(1024)
+                return True  # Received a response
+        except socket.timeout:
+            return False  # No response (could be open or filtered)
+        except Exception:
+            return False
+
+    # --- Target parsing helper (restore if missing) ---
     def parse_targets(target_input: str):
         """Parse a single IP, a range (192.168.1.1-192.168.1.10), or comma-separated IPs into a list."""
         from ipaddress import ip_address
@@ -357,8 +412,12 @@ def run_gui():
                     continue
         return sorted(targets)
 
+    # --- Real scan logic ---
     def threaded_scan():
         stop_event.clear()
+        if demo_mode_var.get():
+            run_demo_scan()
+            return
         target_input = entry_targets.get()
         targets = parse_targets(target_input)
         port_input = entry_ports.get()
@@ -418,26 +477,32 @@ def run_gui():
                     return
                 try:
                     if udp_scan:
-                        # UDP scan logic placeholder
-                        pass
+                        udp_open = scan_udp_port(current_ip, port, timeout)
+                        if udp_open:
+                            color_insert(output, f"Port {port}/UDP: OPEN\n", 'open')
+                            open_ports.append(f"{port}/UDP")
+                            open_port_details.append(f"{port}/UDP")
+                            open_ports_count += 1
+                        elif show_closed:
+                            color_insert(output, f"Port {port}/UDP: CLOSED or FILTERED\n", 'closed')
                     else:
-                        import socket
-                        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                            s.settimeout(timeout)
-                            result = s.connect_ex((str(current_ip), port))
-                            if result == 0:
-                                banner = grab_banner(str(current_ip), port, timeout) if banner_grab else None
-                                banner_str = f" | Banner: {banner}" if banner else ""
-                                color_insert(output, f"Port {port}: OPEN{banner_str}\n", 'open')
-                                open_ports.append(port)
-                                open_port_details.append(f"{port}{banner_str}")
-                                open_ports_count += 1
-                            elif show_closed:
-                                color_insert(output, f"Port {port}: CLOSED\n", 'closed')
-                            # Retry on failure (placeholder, not implemented)
-                            # if retry_on_fail and result != 0:
-                            #     ...
-                    # Progress and status update for each port
+                        if retry_on_fail:
+                            is_open = scan_port_with_retry(current_ip, port, timeout, retries=1)
+                        else:
+                            import socket
+                            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                                s.settimeout(timeout)
+                                result = s.connect_ex((str(current_ip), port))
+                                is_open = (result == 0)
+                        if is_open:
+                            banner = grab_banner(str(current_ip), port, timeout) if banner_grab else None
+                            banner_str = f" | Banner: {banner}" if banner else ""
+                            color_insert(output, f"Port {port}: OPEN{banner_str}\n", 'open')
+                            open_ports.append(port)
+                            open_port_details.append(f"{port}{banner_str}")
+                            open_ports_count += 1
+                        elif show_closed:
+                            color_insert(output, f"Port {port}: CLOSED\n", 'closed')
                     percent = ((scanned_ips + (idx+1)/len(ports)) / total_ips) * 100
                     elapsed = time.time() - t0
                     est_total = (elapsed / (scanned_ips + (idx+1)/len(ports))) * total_ips if (scanned_ips + (idx+1)/len(ports)) > 0 else 0
@@ -461,10 +526,8 @@ def run_gui():
         color_insert(output, summary, 'info')
         add_to_history(f"Scan: {target_input}, Ports: {port_input}, Timeout: {timeout}s\n", output.get(1.0, tk.END))
         set_status_line("Scan complete.")
-        # Export on completion
         if export_on_complete:
             export_results()
-        # Sound notification
         if sound_notify:
             try:
                 root.bell()

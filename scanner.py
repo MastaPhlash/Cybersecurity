@@ -28,7 +28,7 @@ def validate_port(port_str: str) -> bool:
 def parse_ports(port_input: str) -> Optional[List[int]]:
     """
     Parse a port input string (e.g., '22,80,443' or '20-25,80,443') into a sorted list of unique ports.
-    Returns None if invalid.
+    Returns None if invalid. Port 0 is not allowed.
     """
     ports = set()
     try:
@@ -45,6 +45,8 @@ def parse_ports(port_input: str) -> Optional[List[int]]:
                 if not (1 <= port <= 65535):
                     return None
                 ports.add(port)
+        # Remove port 0 if somehow present
+        ports.discard(0)
         return sorted(ports)
     except Exception:
         return None

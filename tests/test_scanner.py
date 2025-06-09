@@ -15,7 +15,7 @@ class TestScanner(unittest.TestCase):
     def test_validate_port(self):
         self.assertTrue(validate_port('22'))
         self.assertTrue(validate_port('65535'))
-        self.assertFalse(validate_port('0'))
+        self.assertFalse(validate_port('0'))  # Port 0 is not valid
         self.assertFalse(validate_port('70000'))
         self.assertFalse(validate_port('notaport'))
 
@@ -58,7 +58,7 @@ class TestParsePorts(unittest.TestCase):
     def test_mixed(self):
         self.assertEqual(parse_ports('20-22,80,443'), [20, 21, 22, 80, 443])
     def test_invalid(self):
-        self.assertIsNone(parse_ports('0,70000'))
+        self.assertIsNone(parse_ports('0,70000'))  # Port 0 and 70000 are invalid
         self.assertIsNone(parse_ports('abc'))
     def test_duplicates(self):
         self.assertEqual(parse_ports('22,22,22'), [22])
