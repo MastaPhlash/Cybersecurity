@@ -195,3 +195,6 @@ cython_debug/
 
 # Ignore scan profiles (user data)
 scan_profiles.json
+
+# Tests directory
+tests/
